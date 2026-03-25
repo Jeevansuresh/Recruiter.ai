@@ -53,13 +53,18 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` and add your API key:
+Edit `.env` and fill in your values:
 
-```
+```env
+# Required — get a free key at https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=your_gemini_api_key_here
-```
 
-> Get a free API key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+# Required — generate with: python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY=your_secret_key_here
+
+# Optional — defaults to SQLite if not set (fine for local dev)
+# MYSQL_URI=mysql+pymysql://user:password@localhost/recruiter_db
+```
 
 ### 5. Run the app
 
@@ -67,7 +72,9 @@ GEMINI_API_KEY=your_gemini_api_key_here
 python app.py
 ```
 
-Visit `http://localhost:5000` in your browser.
+> **The database is created automatically on first run.** Flask will create a `recruiter.db` SQLite file inside the `instance/` folder with all the required tables — no manual migration needed.
+
+Visit `http://localhost:5000` in your browser and register an account to get started.
 
 ## Project Structure
 
