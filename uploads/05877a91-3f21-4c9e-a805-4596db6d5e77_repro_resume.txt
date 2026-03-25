@@ -1,0 +1,5 @@
+John Doe
+Software Engineer
+Skills: Python, Java, SQL, Flask, React
+Experience: 5 years at Tech Corp.
+Education: BS Computer Science

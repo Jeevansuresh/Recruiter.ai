@@ -32,7 +32,7 @@ chunks.pkl
 *.pkl
 
 # === Uploads (user data) ===
-uploads/
+# uploads/ — intentionally tracked to include sample resumes in the repo
 
 # === Processed Files ===
 processed/
