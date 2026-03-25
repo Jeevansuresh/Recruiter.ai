@@ -1,0 +1,63 @@
+# === Secrets & Environment ===
+.env
+*.env
+*.env.*
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+
+# === Virtual Environments ===
+.venv/
+venv/
+env/
+ENV/
+
+# === Flask / App Data ===
+instance/
+app.log
+error.log
+output.log
+server_log.txt
+out.txt
+
+# === Vector Store & ML Artifacts ===
+vectors.index
+chunks.pkl
+*.index
+*.pkl
+
+# === Uploads (user data) ===
+uploads/
+
+# === Processed Files ===
+processed/
+
+# === Test / Scratch Files ===
+test.py
+test_*.py
+check.py
+list_models.py
+verify_v2.py
+repro_resume.txt
+test_emb_out.txt
+supported_models.txt
+
+# === Sample / Demo PDFs ===
+*.pdf
+
+# === IDE / OS ===
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Byte-compiled / Distribution ===
+*.egg-info/
+dist/
+build/

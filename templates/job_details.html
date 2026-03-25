@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="job-header" style="margin-bottom: 2.5rem;">
+    <style>
+        .badge-good {
+            background: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-moderate {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-poor {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-base {
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+    </style>
+    <a href="{{ url_for('dashboard.home') }}"
+        style="color: var(--text-muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.95rem; font-weight: 500; transition: color 0.2s;"><i
+            class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    <h1 class="page-title" style="margin-bottom: 0.5rem; color: var(--text-main); font-size: 2.2rem;">{{ job.title }}
+    </h1>
+    <p style="color: var(--text-muted); font-size: 1rem; margin: 0;"><i class="fa-regular fa-calendar"></i> Posted on {{
+        job.created_at.strftime('%B %d, %Y') }}</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 350px 1fr; gap: 2.5rem; align-items: start;">
+    <!-- Upload Section Sidebar -->
+    <div class="glass-panel" style="position: sticky; top: 2rem; padding: 2rem;">
+        <h3
+            style="margin-top: 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 1.5rem; color: var(--accent);">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Resumes
+        </h3>
+        <form id="uploadForm" method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+            <input type="hidden" name="job_id" value="{{ job.id }}">
+            <input type="hidden" name="role_requirements" value="{{ job.description }}">
+
+            <div style="border: 2px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 3rem 1.5rem; text-align: center; background: rgba(0,0,0,0.25); cursor: pointer; transition: all 0.2s;"
+                id="dropzone">
+                <i class="fa-regular fa-file-pdf"
+                    style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <p style="margin: 0; font-weight: 500; font-size: 1.05rem;">Click to select files</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">PDF or TXT documents</p>
+                <input type="file" name="files" multiple accept=".pdf,.txt" style="display: none;" id="fileInput">
+            </div>
+
+            <div id="fileList"
+                style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted); min-height: 2rem;"></div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; width: 100%; display: flex;"
+                id="uploadBtn" disabled>
+                <i class="fa-solid fa-microchip"></i> Run AI Matcher
+            </button>
+            <p id="loadingText"
+                style="display:none; text-align:center; font-size:0.85rem; color:var(--text-muted); margin-top:0.75rem;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Processing resumes... this may take a moment.
+            </p>
+        </form>
+    </div>
+
+    <!-- Candidates Feed Section -->
+    <div class="candidates-list">
+        {% macro render_candidate(candidate) %}
+        <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1.75rem; transition: transform 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="margin: 0; display:flex; align-items:center; gap:0.75rem; font-size: 1.25rem;">
+                    <i class="fa-regular fa-file-lines" style="color:var(--accent);"></i> {{ candidate.filename }}
+                </h3>
+                {% set badge_class = 'badge-poor' %}
+                {% if candidate.classification == 'Good Fit' %}
+                {% set badge_class = 'badge-good' %}
+                {% elif candidate.classification == 'Moderate Fit' %}
+                {% set badge_class = 'badge-moderate' %}
+                {% endif %}
+
+                <div class="badge-base {{ badge_class }}">
+                    <span>{{ "%.1f"|format(candidate.match_score * 100) }}% Match</span> <span
+                        style="opacity: 0.5">|</span> <span>{{ candidate.classification }}</span>
+                </div>
+            </div>
+
+            {% if candidate.ai_analysis %}
+            <div
+                style="background: rgba(0,0,0,0.25); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; font-size: 0.95rem; border: 1px solid rgba(255,255,255,0.05);">
+                <p style="margin:0 0 0.75rem 0; font-size: 1.05rem;"><strong style="color: var(--text-main);"><i
+                            class="fa-solid fa-robot" style="color: var(--accent); margin-right: 0.5rem;"></i> AI
+                        Evaluation</strong></p>
+                <p style="margin:0; color: var(--text-muted); line-height: 1.6;">{{
+                    candidate.ai_analysis.get('score_reason', 'Analysis pending...') }}</p>
+
+                <div
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <div>
+                        <p style="margin:0 0 1rem 0; color: #a7f3d0; font-weight: 500;"><i
+                                class="fa-solid fa-check"></i> <strong>Key Strengths</strong></p>
+                        <ul style="margin:0; padding-left: 1.2rem; color: var(--text-muted); line-height: 1.6;">
+                            {% for strength in candidate.ai_analysis.get('key_strengths', [])[:4] %}
+                            <li>{{ strength }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 1rem 0; color: #fca5a5; font-weight: 500;"><i
+                                class="fa-solid fa-xmark"></i> <strong>Missing Skills</strong></p>
+                        <ul style="margin:0; padding-left: 1.2rem; color: var(--text-muted); line-height: 1.6;">
+                            {% for missing in candidate.ai_analysis.get('missing_critical_skills', [])[:4] %}
+                            <li>{{ missing }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div
+                style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 1rem;">
+                <div style="font-size: 0.9rem; color: var(--text-muted);">
+                    Current Status:
+                    {% if candidate.status == 'Shortlisted' %}
+                    <strong style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> {{ candidate.status
+                        }}</strong>
+                    {% elif candidate.status == 'Rejected' %}
+                    <strong style="color: var(--danger);"><i class="fa-solid fa-circle-xmark"></i> {{ candidate.status
+                        }}</strong>
+                    {% else %}
+                    <strong style="color: var(--warning);"><i class="fa-solid fa-clock"></i> {{ candidate.status
+                        }}</strong>
+                    {% endif %}
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <form method="POST" action="{{ url_for('dashboard.update_status', id=candidate.id) }}"
+                        style="margin: 0;">
+                        <input type="hidden" name="status" value="Shortlisted">
+                        <button type="submit" class="btn"
+                            style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.5rem 1rem; font-size: 0.9rem; transition: all 0.2s;"
+                            onmouseover="this.style.background='var(--success)'; this.style.color='#fff'"
+                            onmouseout="this.style.background='rgba(16, 185, 129, 0.15)'; this.style.color='#6ee7b7'"><i
+                                class="fa-solid fa-check"></i> Shortlist</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('dashboard.update_status', id=candidate.id) }}"
+                        style="margin: 0;">
+                        <input type="hidden" name="status" value="Rejected">
+                        <button type="submit" class="btn"
+                            style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.5rem 1rem; font-size: 0.9rem; transition: all 0.2s;"
+                            onmouseover="this.style.background='var(--danger)'; this.style.color='#fff'"
+                            onmouseout="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.color='#fca5a5'"><i
+                                class="fa-solid fa-xmark"></i> Reject</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        {% endmacro %}
+
+        <div class="tabs"
+            style="display: flex; gap: 1rem; border-bottom: 2px solid rgba(255,255,255,0.1); margin-bottom: 2rem; padding-bottom: 0.5rem;">
+            <button onclick="showTab('recent')" id="btn-recent"
+                style="background: none; border: none; color: var(--accent); font-size: 1.1rem; font-weight: 600; cursor: pointer; padding: 0.5rem 1rem; border-bottom: 2px solid var(--accent); transition: all 0.2s;">
+                <i class="fa-solid fa-sparkles"></i> Just Analyzed ({{ recent_candidates|length if recent_candidates
+                else 0 }})
+            </button>
+            <button onclick="showTab('past')" id="btn-past"
+                style="background: none; border: none; color: var(--text-muted); font-size: 1.1rem; font-weight: 500; cursor: pointer; padding: 0.5rem 1rem; border-bottom: 2px solid transparent; transition: all 0.2s;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Past Analyzed ({{ candidates|length }})
+            </button>
+        </div>
+
+        <div id="tab-recent" style="display: block;">
+            {% if recent_candidates %}
+            {% for candidate in recent_candidates %}
+            {{ render_candidate(candidate) }}
+            {% endfor %}
+            {% else %}
+            <div class="glass-panel"
+                style="text-align: center; padding: 5rem 2rem; border-radius: 16px; border: 2px dashed var(--glass-border); background: rgba(0,0,0,0.1);">
+                <i class="fa-solid fa-inbox"
+                    style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1.5rem; opacity: 0.5;"></i>
+                <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">No Recently Analyzed Candidates</h3>
+                <p style="color: var(--text-muted);">Upload PDF or TXT resumes using the pane on the left to see instant
+                    analysis.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div id="tab-past" style="display: none;">
+            {% for candidate in candidates %}
+            {{ render_candidate(candidate) }}
+            {% else %}
+            <div class="glass-panel"
+                style="text-align: center; padding: 5rem 2rem; border-radius: 16px; border: 2px dashed var(--glass-border); background: rgba(0,0,0,0.1);">
+                <i class="fa-solid fa-inbox"
+                    style="font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1.5rem; opacity: 0.5;"></i>
+                <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">No Candidates Yet</h3>
+                <p style="color: var(--text-muted);">Upload PDF or TXT resumes using the pane on the left to securely
+                    match against this job's profile.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        document.getElementById('tab-recent').style.display = (tabName === 'recent') ? 'block' : 'none';
+        document.getElementById('tab-past').style.display = (tabName === 'past') ? 'block' : 'none';
+
+        const btnRecent = document.getElementById('btn-recent');
+        const btnPast = document.getElementById('btn-past');
+
+        if (tabName === 'recent') {
+            btnRecent.style.color = 'var(--accent)';
+            btnRecent.style.borderBottomColor = 'var(--accent)';
+            btnRecent.style.fontWeight = '600';
+
+            btnPast.style.color = 'var(--text-muted)';
+            btnPast.style.borderBottomColor = 'transparent';
+            btnPast.style.fontWeight = '500';
+        } else {
+            btnPast.style.color = 'var(--accent)';
+            btnPast.style.borderBottomColor = 'var(--accent)';
+            btnPast.style.fontWeight = '600';
+
+            btnRecent.style.color = 'var(--text-muted)';
+            btnRecent.style.borderBottomColor = 'transparent';
+            btnRecent.style.fontWeight = '500';
+        }
+    }
+</script>
+
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const loadingText = document.getElementById('loadingText');
+
+    document.getElementById('uploadForm').addEventListener('submit', () => {
+        uploadBtn.style.opacity = '0.5';
+        setTimeout(() => uploadBtn.disabled = true, 10);
+        loadingText.style.display = 'block';
+    });
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', updateFileList);
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => dropzone.style.borderColor = 'var(--accent)', false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => dropzone.style.borderColor = 'rgba(255,255,255,0.2)', false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        fileInput.files = e.dataTransfer.files;
+        updateFileList();
+    });
+
+    function updateFileList() {
+        const files = fileInput.files;
+        if (files.length > 0) {
+            fileList.innerHTML = `<strong style="color:var(--text-main);"><i class="fa-solid fa-check"></i> ${files.length} file(s) selected:</strong><br>` +
+                Array.from(files).map(f => f.name).slice(0, 3).join('<br>') +
+                (files.length > 3 ? '<br>...' : '');
+            uploadBtn.disabled = false;
+            dropzone.style.borderColor = 'var(--accent)';
+            dropzone.style.background = 'rgba(99, 102, 241, 0.1)';
+        } else {
+            fileList.innerHTML = '';
+            uploadBtn.disabled = true;
+            dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+            dropzone.style.background = 'rgba(0,0,0,0.25)';
+        }
+    }
+</script>
+{% endblock %}

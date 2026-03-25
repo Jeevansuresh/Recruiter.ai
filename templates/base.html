@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title|default("Recruiter AI | Dashboard") }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+    {% if current_user.is_authenticated %}
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header logo-container">
+                <h2 class="animated-logo"><i class="fa-solid fa-magnifying-glass-chart logo-icon"></i> Recruiter<span
+                        style="color:var(--text-main)">AI</span></h2>
+            </div>
+            <nav class="sidebar-nav" style="margin-top: 2rem; display: flex; flex-direction: column; flex-grow: 1;">
+                <a href="{{ url_for('dashboard.home') }}"
+                    class="nav-link {% if request.endpoint == 'dashboard.home' or request.endpoint == 'dashboard.job_details' %}active{% endif %}"><i
+                        class="fa-solid fa-layer-group"></i> My Jobs</a>
+                <a href="{{ url_for('dashboard.all_candidates') }}"
+                    class="nav-link {% if request.endpoint == 'dashboard.all_candidates' %}active{% endif %}"><i
+                        class="fa-solid fa-users-viewfinder"></i> Candidates</a>
+                <a href="{{ url_for('dashboard.interviews') }}"
+                    class="nav-link {% if request.endpoint == 'dashboard.interviews' %}active{% endif %}"><i
+                        class="fa-solid fa-chess-board"></i> Interviews</a>
+                <a href="{{ url_for('dashboard.outreach') }}"
+                    class="nav-link {% if request.endpoint == 'dashboard.outreach' %}active{% endif %}"><i
+                        class="fa-solid fa-envelope-open-text"></i> AI Outreach</a>
+                <a href="{{ url_for('dashboard.analytics') }}"
+                    class="nav-link {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}"><i
+                        class="fa-solid fa-chart-line"></i> Analytics</a>
+                <a href="{{ url_for('dashboard.workspace') }}"
+                    class="nav-link {% if request.endpoint == 'dashboard.workspace' %}active{% endif %}"><i
+                        class="fa-solid fa-pen-nib"></i> Workspace</a>
+                <div style="flex-grow: 1;"></div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link text-danger" style="color:#ef4444;"><i
+                        class="fa-solid fa-arrow-right-from-bracket"></i> Log Out</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p style="margin:0; color:var(--text-muted)">Logged in as</p>
+                <p
+                    style="margin:0; font-weight: 600; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ current_user.username }}</p>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="main-content">
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% else %}
+    <!-- Authentication Layout -->
+    <div class="auth-layout">
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% block auth_content %}{% endblock %}
+    </div>
+    {% endif %}
+</body>
+
+</html>

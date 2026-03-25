@@ -1,0 +1,13 @@
+Flask
+faiss-cpu
+sentence-transformers
+python-dotenv
+Werkzeug
+numpy
+PyPDF2
+google-generativeai
+Flask-SQLAlchemy
+PyMySQL
+Flask-Login
+Flask-Bcrypt
+cryptography

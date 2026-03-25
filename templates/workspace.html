@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="job-header animate-enter"
+    style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="page-title" style="margin-bottom: 0.5rem; color: var(--text-main); font-size: 2.2rem;">Workspace</h1>
+        <p style="color: var(--text-muted); font-size: 1rem; margin: 0;"><i class="fa-solid fa-pen-nib"></i> Your
+            private hiring notes</p>
+    </div>
+    <form method="POST" style="display: flex; gap: 0.5rem; align-items: center;">
+        <input type="text" name="role_prompt" placeholder="E.g. Senior Python Developer"
+            style="padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 0.95rem; outline: none; width: 260px;"
+            required>
+        <button type="submit" name="action" value="generate_jd" class="btn"
+            style="background: linear-gradient(135deg, var(--accent), #a855f7); color: white; border: none; padding: 0.6rem 1rem; font-size: 0.95rem;"><i
+                class="fa-solid fa-wand-magic-sparkles"></i> AI Generate JD</button>
+        <button type="submit" name="action" value="create" class="btn btn-primary" style="margin-left: 1rem;"><i
+                class="fa-solid fa-plus"></i> New Note</button>
+    </form>
+</div>
+
+<div class="animate-enter animate-delay-1"
+    style="display: grid; grid-template-columns: 280px 1fr; gap: 2rem; height: calc(100vh - 14rem);">
+    <!-- Notes Sidebar -->
+    <div class="glass-panel" style="overflow-y: auto; padding: 1rem;">
+        <h4
+            style="margin: 0.5rem 1rem 1rem 1rem; color: var(--text-muted); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">
+            My Notes</h4>
+        <style>
+            .note-link {
+                display: block;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                color: var(--text-main);
+                text-decoration: none;
+                margin-bottom: 0.25rem;
+                transition: all 0.2s;
+                background: transparent;
+            }
+
+            .note-link:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .active-note-link {
+                background: rgba(255, 255, 255, 0.1) !important;
+            }
+        </style>
+
+        {% for n in notes %}
+        {% set active_class = '' %}
+        {% if active_note and active_note.id == n.id %}
+        {% set active_class = 'active-note-link' %}
+        {% endif %}
+        <a href="{{ url_for('dashboard.workspace', note_id=n.id) }}" class="note-link {{ active_class }}">
+            <i class="fa-regular fa-file-lines" style="color: var(--accent); margin-right: 0.5rem;"></i> {{ n.title or
+            'Untitled Note' }}
+        </a>
+        {% else %}
+        <p style="padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">No notes yet.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Active Note Editor -->
+    {% if active_note %}
+    <div class="glass-panel" style="padding: 2rem 3rem; display: flex; flex-direction: column;">
+        <form method="POST" id="noteForm" style="flex: 1; display: flex; flex-direction: column;">
+            <input type="hidden" name="note_id" value="{{ active_note.id }}">
+            <input type="hidden" name="content" id="contentField" value="{{ active_note.content }}">
+            <div
+                style="display: flex; justify-content: space-between; margin-bottom: 1rem; gap: 0.5rem; align-items:center;">
+                <div style="display:flex; gap:0.5rem;">
+                    <button type="button" onclick="setMode('preview')" id="btn-preview" class="btn"
+                        style="padding: 0.4rem 0.9rem; font-size: 0.85rem; background: rgba(99,102,241,0.15); color: var(--accent); border: 1px solid var(--accent);"><i
+                            class="fa-solid fa-eye"></i> Preview</button>
+                    <button type="button" onclick="setMode('edit')" id="btn-edit" class="btn"
+                        style="padding: 0.4rem 0.9rem; font-size: 0.85rem; background: transparent; color: var(--text-muted); border: 1px solid transparent;"><i
+                            class="fa-solid fa-pen"></i> Edit</button>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <button type="submit" name="action" value="save" class="btn"
+                        style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.5rem 1rem; font-size: 0.9rem;"><i
+                            class="fa-solid fa-floppy-disk"></i> Save</button>
+                    <button type="submit" name="action" value="delete" class="btn"
+                        style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.5rem 1rem; font-size: 0.9rem;"
+                        onclick="return confirm('Are you sure?')"><i class="fa-solid fa-trash"></i> Delete</button>
+                </div>
+            </div>
+            <input type="text" name="title" value="{{ active_note.title }}" placeholder="Page Title"
+                style="width: 100%; font-size: 2.2rem; font-weight: 700; background: transparent; border: none; color: var(--text-main); margin-bottom: 1.5rem; outline: none; font-family: inherit; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
+            <div id="preview-pane" style="flex: 1; overflow-y: auto; color: var(--text-main); line-height: 1.8;"></div>
+            <textarea id="edit-textarea" placeholder="Start typing... Use Markdown."
+                style="display: none; flex: 1; width: 100%; min-height: 400px; background: rgba(0,0,0,0.15); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-main); font-size: 1rem; line-height: 1.6; resize: none; outline: none; font-family: monospace; padding: 1rem;">{{ active_note.content }}</textarea>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        #preview-pane h1 {
+            color: var(--text-main);
+            font-size: 1.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        #preview-pane h2 {
+            color: var(--text-main);
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+        }
+
+        #preview-pane h3 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+
+        #preview-pane p {
+            color: var(--text-muted);
+            margin: 0.5rem 0;
+        }
+
+        #preview-pane ul,
+        #preview-pane ol {
+            color: var(--text-muted);
+            padding-left: 1.5rem;
+        }
+
+        #preview-pane li {
+            margin-bottom: 0.3rem;
+        }
+
+        #preview-pane strong {
+            color: var(--text-main);
+        }
+
+        #preview-pane code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        #preview-pane hr {
+            border-color: rgba(255, 255, 255, 0.1);
+            margin: 1.5rem 0;
+        }
+    </style>
+    <script>
+        const textarea = document.getElementById('edit-textarea');
+        const preview = document.getElementById('preview-pane');
+        function renderPreview() { preview.innerHTML = marked.parse(textarea.value || '*No content yet.*'); }
+        function setMode(mode) {
+            const bP = document.getElementById('btn-preview'), bE = document.getElementById('btn-edit');
+            if (mode === 'preview') {
+                renderPreview(); preview.style.display = 'block'; textarea.style.display = 'none';
+                bP.style.cssText += 'background:rgba(99,102,241,0.15);color:var(--accent);border:1px solid var(--accent);';
+                bE.style.cssText += 'background:transparent;color:var(--text-muted);border:1px solid transparent;';
+            } else {
+                preview.style.display = 'none'; textarea.style.display = 'block'; textarea.focus();
+                bE.style.cssText += 'background:rgba(99,102,241,0.15);color:var(--accent);border:1px solid var(--accent);';
+                bP.style.cssText += 'background:transparent;color:var(--text-muted);border:1px solid transparent;';
+            }
+        }
+        document.getElementById('noteForm').addEventListener('submit', () => {
+            document.getElementById('contentField').value = textarea.value;
+        });
+        setMode('preview');
+    </script>
+    {% else %}
+    <div class="glass-panel" style="display: flex; align-items: center; justify-content: center;">
+        <p style="color: var(--text-muted);"><i class="fa-solid fa-arrow-left"></i> Create or select a note to start
+            writing</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

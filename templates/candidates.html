@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="job-header animate-enter" style="margin-bottom: 2.5rem;">
+    <h1 class="page-title" style="margin-bottom: 0.5rem; color: var(--text-main); font-size: 2.2rem;">All Candidates
+    </h1>
+    <p style="color: var(--text-muted); font-size: 1rem; margin: 0;"><i class="fa-solid fa-users"></i> Global Overview
+    </p>
+</div>
+
+<div class="glass-panel animate-enter animate-delay-1" style="padding: 2rem;">
+    {% if candidates %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-muted);">
+                    <th style="padding: 1rem;">Candidate File</th>
+                    <th style="padding: 1rem;">Job</th>
+                    <th style="padding: 1rem;">Match Score</th>
+                    <th style="padding: 1rem;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in candidates %}
+                {% set cand_name = c.ai_analysis.get('candidate_name', '') if c.ai_analysis else '' %}
+                {% set display_name = cand_name if cand_name and cand_name.strip() and cand_name.lower() != 'unknown'
+                else c.filename %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.05)'"
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding: 1rem; font-weight: 500;">
+                        <a href="{{ url_for('dashboard.job_details', job_id=c.job_id) }}"
+                            style="color: var(--text-main); text-decoration: none;">
+                            <i class="fa-solid fa-user-tie" style="color: var(--accent); margin-right: 0.5rem;"></i> {{
+                            display_name }}
+                        </a>
+                    </td>
+                    <td style="padding: 1rem; color: var(--text-muted);">{{ c.job.title }}</td>
+                    <td style="padding: 1rem;">
+                        <span class="card-badge"
+                            style="display: inline-flex; background: rgba(99, 102, 241, 0.1); color: #a5b4fc; padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">
+                            {{ "%.1f"|format(c.match_score * 100) }}%
+                        </span>
+                    </td>
+                    <td style="padding: 1rem;">
+                        {% if c.status == 'Shortlisted' %}
+                        <span
+                            style="color: var(--success); font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;"><i
+                                class="fa-solid fa-circle-check"></i> Shortlisted</span>
+                        {% elif c.status == 'Rejected' %}
+                        <span
+                            style="color: var(--danger); font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;"><i
+                                class="fa-solid fa-circle-xmark"></i> Rejected</span>
+                        {% else %}
+                        <span
+                            style="color: var(--warning); font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem;"><i
+                                class="fa-solid fa-clock"></i> Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 4rem 1rem;">
+        <i class="fa-solid fa-inbox"
+            style="font-size: 3rem; color: var(--text-muted); opacity: 0.5; margin-bottom: 1rem;"></i>
+        <h3 style="margin: 0 0 0.5rem 0;">No candidates yet</h3>
+        <p style="color: var(--text-muted); margin: 0;">Upload resumes in a specific Job dashboard to populate this
+            global overview.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

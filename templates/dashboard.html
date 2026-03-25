@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .card:hover {
+        transform: translateY(-6px);
+        background: rgba(40, 50, 70, 0.6);
+        border-color: rgba(99, 102, 241, 0.4);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header"
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1 class="page-title" style="margin: 0;">My Job Postings</h1>
+    <button class="btn btn-primary"
+        onclick="document.getElementById('createJobModal').style.display='block'; document.getElementById('modalOverlay').style.display='block';"
+        style="width: auto;">
+        <i class="fa-solid fa-plus"></i> New Job
+    </button>
+</div>
+
+<!-- Modal for Creating Job -->
+<div id="createJobModal" class="glass-panel"
+    style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; width: 500px; max-width: 90vw; padding: 2.5rem;">
+    <h2 style="margin-top: 0; color: var(--accent);"><i class="fa-solid fa-briefcase"></i> Create Job Posting</h2>
+    <form method="POST" action="{{ url_for('dashboard.create_job') }}">
+        <div class="form-group">
+            <label>Job Title</label>
+            <input type="text" name="title" required placeholder="e.g. Senior Data Engineer">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Job Description & Requirements</label>
+            <textarea name="description" required rows="7"
+                style="width: 100%; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color:var(--text-main); padding: 1rem; font-family: inherit; font-size: 0.95rem; resize: vertical;"
+                placeholder="Paste the full job description or core skill requirements here. The AI will use this text to score Candidates."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+            <button type="button" class="btn"
+                onclick="document.getElementById('createJobModal').style.display='none'; document.getElementById('modalOverlay').style.display='none';"
+                style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-muted);">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="width: auto;">Create Job</button>
+        </div>
+    </form>
+</div>
+
+<!-- Overlay for modal -->
+<div id="modalOverlay"
+    style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 999;"
+    onclick="document.getElementById('createJobModal').style.display='none'; this.style.display='none';"></div>
+
+<div class="jobs-grid"
+    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+    {% for job in jobs %}
+    <a href="{{ url_for('dashboard.job_details', job_id=job.id) }}"
+        style="text-decoration: none; color: inherit; display: block;">
+        <div class="card glass-panel"
+            style="height: 100%; transition: transform 0.2s, background 0.2s; cursor: pointer;">
+            <h3
+                style="margin-top:0; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.25rem;">
+                {{ job.title }}</h3>
+            <p
+                style="color: var(--text-muted); font-size: 0.95rem; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.2rem; margin-bottom: 0;">
+                {{ job.description }}</p>
+            <div
+                style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-calendar"
+                        style="margin-right: 0.25rem;"></i> {{ job.created_at.strftime('%b %d, %Y') }}</span>
+                <span
+                    style="font-size: 0.85rem; background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 0.35rem 0.85rem; border-radius: 12px; font-weight: 500;">
+                    <i class="fa-solid fa-users" style="margin-right: 0.25rem;"></i> {{ job.candidates|length }}
+                    Candidates
+                </span>
+            </div>
+        </div>
+    </a>
+    {% else %}
+    <div
+        style="grid-column: 1 / -1; text-align: center; padding: 5rem 2rem; color: var(--text-muted); border-radius: 16px; border: 2px dashed var(--glass-border); background: rgba(0,0,0,0.1);">
+        <i class="fa-solid fa-folder-open" style="font-size: 3.5rem; margin-bottom: 1.5rem; opacity: 0.5;"></i>
+        <h2 style="margin-bottom: 0.5rem; color: var(--text-main);">No jobs created yet</h2>
+        <p style="margin-bottom: 2rem;">Create your first job posting to start sourcing and matching candidates.</p>
+        <button class="btn btn-primary"
+            onclick="document.getElementById('createJobModal').style.display='block'; document.getElementById('modalOverlay').style.display='block';"
+            style="width: auto;">
+            <i class="fa-solid fa-plus"></i> Create First Job
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

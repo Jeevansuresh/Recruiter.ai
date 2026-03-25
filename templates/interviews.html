@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="job-header animate-enter" style="margin-bottom: 2.5rem;">
+    <h1 class="page-title" style="margin-bottom: 0.5rem; color: var(--text-main); font-size: 2.2rem;">Interview Pipeline
+    </h1>
+    <p style="color: var(--text-muted); font-size: 1rem; margin: 0;"><i class="fa-solid fa-chess-board"></i> Track
+        Shortlisted candidates through hiring stages</p>
+</div>
+
+{% set stages = ['Screening', 'Technical', 'HR', 'Offered'] %}
+
+<div class="animate-enter animate-delay-1"
+    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; height: calc(100vh - 12rem); overflow-x: auto;">
+    {% for stage in stages %}
+    <div class="glass-panel"
+        style="display: flex; flex-direction: column; background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(255,255,255,0.1);">
+        <div
+            style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; color: var(--text-muted); display: flex; justify-content: space-between;">
+            {{ stage }}
+            <span
+                style="background: rgba(255,255,255,0.1); padding: 0.1rem 0.6rem; border-radius: 12px; font-size: 0.75rem;">
+                {{ candidates | selectattr("interview.stage", "equalto", stage) | list | length + (candidates |
+                selectattr("interview", "none") | list | length if stage == 'Screening' else 0) }}
+            </span>
+        </div>
+        <div style="flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+            {% for c in candidates %}
+            {% set c_stage = c.interview.stage if c.interview else 'Screening' %}
+            {% if c_stage == stage %}
+            {% set cand_name = c.ai_analysis.get('candidate_name', '') if c.ai_analysis else '' %}
+            {% set display_name = cand_name if cand_name and cand_name.strip() and cand_name.lower() != 'unknown' else
+            c.filename %}
+            <div class="glass-panel"
+                style="padding: 1rem; background: rgba(30, 41, 59, 0.9); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s;"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <a href="{{ url_for('dashboard.job_details', job_id=c.job_id) }}"
+                    style="color: var(--text-main); text-decoration: none; font-weight: 500; display: block; margin-bottom: 0.5rem;"><i
+                        class="fa-solid fa-user-tie" style="color: var(--accent);"></i> {{ display_name }}</a>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 1rem 0;"><i
+                        class="fa-regular fa-file-pdf"></i> {{ c.job.title }}</p>
+                <form method="POST" style="margin: 0; display: flex; gap: 0.5rem;">
+                    <input type="hidden" name="candidate_id" value="{{ c.id }}">
+                    <select name="stage" onchange="this.form.submit()"
+                        style="flex: 1; background: rgba(0,0,0,0.3); color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.35rem; font-size: 0.8rem; outline: none; cursor: pointer;">
+                        {% for s in stages %}
+                        <option value="{{ s }}" {% if s==stage %}selected{% endif %}>Move to {{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
